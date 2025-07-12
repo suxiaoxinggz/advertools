@@ -2,6 +2,12 @@
 Change Log - advertools
 =======================
 
+(UNRELEASED)
+------------
+
+* Changed
+    - Added table tags to the default body text selector in crawl
+
 0.17.0 (2025-06-12)
 -------------------
 
