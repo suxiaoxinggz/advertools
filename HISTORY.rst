@@ -7,6 +7,7 @@ Change Log - advertools
 
 * Changed
     - Added table tags to the default body text selector in crawl
+    - Update emoji functionality using v16.0
 
 0.17.0 (2025-06-12)
 -------------------
