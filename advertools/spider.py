@@ -343,6 +343,35 @@ all four options:
               include_url_regex='/shop/'
               )
 
+Customizing the Columns Included in the output file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the crawler will extract all the available elements as described in the documentation. If you want to customize the columns included in the output file, you can use the ``keep_columns`` and ``discard_columns`` parameters.
+
+1. The ``keep_columns`` parameter allows you to specify which columns should always be included in the output file. 
+2. The ``discard_columns`` parameter lets you specify which columns should be excluded. 
+
+The filtering is done in the following order: first, the ``keep_columns`` regex patterns are applied, and then the ``discard_columns`` patterns are applied. You cannot discard the ``url`` and ``errors`` columns as they are always kept by default.
+
+For example, if we execute the following code snippet: 
+
+>>> adv.crawl(
+...     "http://example.com",
+...     "output_file.jl",
+...     keep_columns=["url", "title"],
+... )
+
+
+Our ``output_file.jl`` will contain the ``url``, ``title`` and ``errors`` columns. If we execute the following: 
+
+>>> adv.crawl(
+...     "http://example.com",
+...     "output_file.jl",
+...     discard_columns=["title"],
+... )
+
+Our ``output.jl`` file will contain all columns but ``title``.
+
 Spider Custom Settings and Additional Functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -522,7 +551,7 @@ def _filter_crawl_dict(d, keep_columns=None, discard_columns=None):
     Returns:
     - dict: A filtered dictionary.
     """
-    always_include = {"url", "errors", "jsonld_errors"}
+    always_include = {"url", "errors"}
 
     def matches_any(patterns, key):
         return any(re.search(pattern, key) for pattern in patterns)
@@ -1072,7 +1101,7 @@ def crawl(
       A list of regex patterns for the columns to discard in the output. If not
       specified, all columns are kept. If both ``keep_columns`` and
       ``discard_columns`` are specified, the columns will be filtered based on the
-      ``keep_columns`` regex patterns first, and then the ``discard_columns``.
+      ``keep_columns`` regex patterns first, and then the ``discard_columns``. You cannot discard the ``url`` and ``errors`` columns as they are always kept by default.
     Examples
     --------
     Crawl a website and let the crawler discover as many pages as available
