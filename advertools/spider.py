@@ -968,13 +968,10 @@ class SEOSitemapSpider(Spider):
                     for norm in ld_norm:
                         jsonld.update(**norm)
         except Exception as e:
-            if 'jsonld_errors' not in self.discard_columns: 
-                jsonld = {"jsonld_errors": str(e)}
-                self.logger.exception(
-                    " ".join([str(e), str(response.status), response.url])
-                )
-            else: 
-                pass 
+            jsonld = {"jsonld_errors": str(e)}
+            self.logger.exception(
+                " ".join([str(e), str(response.status), response.url])
+            )
         page_content = _extract_content(response, **tags_xpaths)
         crawl_dict = dict(
             url=response.request.url,
