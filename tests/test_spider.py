@@ -102,7 +102,6 @@ def test_extract_images(html_file="tests/data/crawl_testing/test_images.html"):
         result = _numbered_duplicates([])
         assert result == []
 
-
     def test_json_to_dict_empty_input():
         result = _json_to_dict({})
         assert result == {}
@@ -114,7 +113,6 @@ def sample_dict():
     return {
         "url": "https://example.com/",
         "errors": [],
-        "jsonld_errors": [],
         "title": "Example Domain",
         "h1": "Example Domain",
         "h2": "Sub‑heading",
@@ -138,11 +136,11 @@ def test_filterdict_returns_original_when_no_filters(sample_dict):
 @pytest.mark.parametrize(
     "patterns, expected_keys",
     [
-        (["^title$"], {"title", "url", "errors", "jsonld_errors"}),
-        (["^h\\d$"], {"h1", "h2", "url", "errors", "jsonld_errors"}),
+        (["^title$"], {"title", "url", "errors"}),
+        (["^h\\d$"], {"h1", "h2", "url", "errors"}),
         (
             ["(title|meta_description)"],
-            {"title", "meta_description", "url", "errors", "jsonld_errors"},
+            {"title", "meta_description", "url", "errors"},
         ),
     ],
 )
@@ -162,7 +160,7 @@ def test_filterdict_keep_only(sample_dict, patterns, expected_keys):
 def test_filterdict_discard_only(sample_dict, patterns, forbidden_keys):
     result = _filter_crawl_dict(sample_dict, discard_columns=patterns)
     assert not (set(result) & set(forbidden_keys))
-    for k in {"url", "errors", "jsonld_errors"}:
+    for k in {"url", "errors"}:
         assert k in result
 
 
@@ -172,14 +170,14 @@ def test_filterdict_discard_overrides_keep(sample_dict):
     result = _filter_crawl_dict(sample_dict, keep, discard)
     assert "h1" in result
     assert "h2" not in result
-    for k in {"url", "errors", "jsonld_errors"}:
+    for k in {"url", "errors"}:
         assert k in result
 
 
-@pytest.mark.parametrize("pattern", [r"url", r"errors", r"jsonld"])
+@pytest.mark.parametrize("pattern", [r"url", r"errors"])
 def test_filterdict_always_include_never_dropped(sample_dict, pattern):
     result = _filter_crawl_dict(sample_dict, discard_columns=[pattern])
-    for k in {"url", "errors", "jsonld_errors"}:
+    for k in {"url", "errors"}:
         assert k in result
 
 
@@ -190,3 +188,34 @@ def test_filterdict_empty_input_dict_returns_empty():
 def test_filterdict_invalid_regex_raises(sample_dict):
     with pytest.raises(re.error):
         _filter_crawl_dict(sample_dict, keep_columns=["["])  # invalid pattern
+
+
+def test_filterdict_jsonld_errors_can_be_filtered():
+    """Test that jsonld_errors can now be filtered out since it's not always included."""
+    sample_with_jsonld = {
+        "url": "https://example.com/",
+        "errors": [],
+        "title": "Example Domain",
+        "jsonld_errors": ["Some JSON-LD error"],
+        "custom_key": "value",
+    }
+
+    result = _filter_crawl_dict(sample_with_jsonld, discard_columns=["jsonld_errors"])
+    assert "jsonld_errors" not in result
+    assert "url" in result  # always included
+    assert "errors" in result  # always included
+
+    result2 = _filter_crawl_dict(sample_with_jsonld, keep_columns=["jsonld_errors"])
+    assert set(result2.keys()) == {"url", "errors", "jsonld_errors"}
+
+
+def test_filterdict_jsonld_errors_not_always_present():
+    """Test that dictionaries without jsonld_errors work correctly."""
+    sample_without_jsonld = {
+        "url": "https://example.com/",
+        "errors": [],
+        "title": "Example Domain",
+    }
+
+    result = _filter_crawl_dict(sample_without_jsonld, keep_columns=["title"])
+    assert set(result.keys()) == {"url", "errors", "title"}
