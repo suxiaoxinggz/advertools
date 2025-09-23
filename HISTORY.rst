@@ -2,12 +2,13 @@
 Change Log - advertools
 =======================
 
-(UNRELEASED)
-------------
+0.17.1 (2025-09-23)
+-------------------
 
 * Changed
     - Added table tags to the default body text selector in crawl
     - Update emoji functionality using v16.0
+    - Remove ``jsonld_errors`` from columns to always keep contributed by `@antoineeripret <https://github.com/antoineeripret>`_
 
 0.17.0 (2025-06-12)
 -------------------
