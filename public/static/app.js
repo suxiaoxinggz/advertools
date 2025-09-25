@@ -1136,6 +1136,8 @@ async function loadAPIStatus() {
 }
 
 async function saveAPIKeys() {
+  console.log('开始保存API密钥...'); // Debug log
+  
   const keys = {
     google_search_api_key: document.getElementById('google-api-key').value.trim(),
     google_search_cx: document.getElementById('google-cx').value.trim(),
@@ -1143,6 +1145,8 @@ async function saveAPIKeys() {
     youtube_api_key: document.getElementById('youtube-api-key').value.trim(),
     knowledge_graph_api_key: document.getElementById('knowledge-graph-key').value.trim()
   };
+  
+  console.log('收集到的API密钥:', Object.keys(keys).filter(k => keys[k])); // Debug log
   
   // Remove empty keys
   Object.keys(keys).forEach(key => {
@@ -1152,25 +1156,36 @@ async function saveAPIKeys() {
   });
   
   if (Object.keys(keys).length === 0) {
-    alert('请至少输入一个API密钥');
+    alert('❌ 请至少输入一个API密钥');
     return;
   }
   
   try {
+    console.log('发送API密钥到服务器...'); // Debug log
     const result = await apiCall('/config/keys', 'POST', keys);
+    console.log('服务器响应:', result); // Debug log
     
     if (result.success) {
-      alert(`成功保存 ${result.data.updated_keys} 个API密钥`);
+      const message = `✅ 成功保存 ${result.data.updated_keys} 个API密钥\n配置的API: ${result.data.configured_apis.join(', ')}`;
+      alert(message);
       loadAPIStatus(); // Reload status
+      
+      // Auto-test APIs after saving
+      if (confirm('是否立即测试保存的API连接？')) {
+        setTimeout(() => testAllAPIs(), 500);
+      }
     } else {
-      alert('保存失败: ' + result.error);
+      alert('❌ 保存失败: ' + result.error);
     }
   } catch (error) {
-    alert('保存失败: ' + error.message);
+    console.error('API密钥保存失败:', error); // Debug log
+    alert('❌ 保存失败: ' + error.message + '\n\n请检查网络连接和服务状态');
   }
 }
 
 async function testAllAPIs() {
+  console.log('开始测试所有API...'); // Debug log
+  
   const apis = ['google_search', 'twitter', 'youtube'];
   const results = [];
   
@@ -1180,40 +1195,101 @@ async function testAllAPIs() {
     statusDiv.innerHTML = '<div class="flex items-center justify-center py-4"><div class="spinner"></div><span class="ml-2">测试API连接中...</span></div>';
   }
   
+  // Test each API
   for (const api of apis) {
     try {
+      console.log(`测试 ${api} API...`); // Debug log
       const result = await apiCall(`/config/test/${api}`, 'POST');
+      console.log(`${api} API结果:`, result); // Debug log
+      
       if (result.success) {
         results.push(`${api}: ✅ 连接成功`);
       } else {
         let errorMsg = result.error;
-        // Provide more helpful error messages
+        // Provide more helpful error messages based on common errors
         if (errorMsg.includes('API key not valid')) {
-          errorMsg = 'API密钥无效，请检查密钥是否正确复制';
+          errorMsg = '❌ API密钥无效 - 请检查密钥格式和权限';
         } else if (errorMsg.includes('quota')) {
-          errorMsg = 'API配额已用完，请检查计费设置';
+          errorMsg = '❌ API配额已用完 - 请检查计费设置';  
+        } else if (errorMsg.includes('403')) {
+          errorMsg = '❌ 权限不足 - 请检查API密钥权限';
+        } else if (errorMsg.includes('需要')) {
+          errorMsg = `❌ ${errorMsg}`;
+        } else {
+          errorMsg = `❌ ${errorMsg}`;
         }
-        results.push(`${api}: ❌ ${errorMsg}`);
+        results.push(`${api}: ${errorMsg}`);
       }
     } catch (error) {
-      results.push(`${api}: ❌ 网络错误 - ${error.message}`);
+      console.error(`${api} API测试失败:`, error); // Debug log
+      results.push(`${api}: ❌ 请求失败 - ${error.message}`);
     }
   }
   
-  // Show results in a better format
+  // Show results in a better format  
   const resultHTML = `
     <div class="bg-white border rounded-lg p-4">
-      <h4 class="font-medium text-gray-900 mb-3">API连接测试结果:</h4>
-      <div class="space-y-2">
-        ${results.map(result => `<div class="text-sm ${result.includes('✅') ? 'text-green-700' : 'text-red-700'}">${result}</div>`).join('')}
+      <h4 class="font-medium text-gray-900 mb-3">
+        <i class="fas fa-plug mr-2"></i>API连接测试结果:
+      </h4>
+      <div class="space-y-3">
+        ${results.map(result => {
+          const isSuccess = result.includes('✅');
+          return `<div class="flex items-start p-2 rounded ${isSuccess ? 'bg-green-50' : 'bg-red-50'}">
+            <div class="text-sm ${isSuccess ? 'text-green-700' : 'text-red-700'}">${result}</div>
+          </div>`;
+        }).join('')}
       </div>
-      <button onclick="loadAPIStatus()" class="mt-3 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">刷新状态</button>
+      <div class="mt-4 pt-3 border-t flex space-x-2">
+        <button onclick="loadAPIStatus()" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+          <i class="fas fa-sync-alt mr-1"></i>刷新状态
+        </button>
+        <button onclick="showAPIHelp()" class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600">
+          <i class="fas fa-question-circle mr-1"></i>配置帮助
+        </button>
+      </div>
     </div>
   `;
   
   if (statusDiv) {
     statusDiv.innerHTML = resultHTML;
+  } else {
+    console.error('找不到api-status元素');
+    alert('测试结果:\n' + results.join('\n'));
   }
+}
+
+// Add API configuration help function
+function showAPIHelp() {
+  const helpText = `
+API配置步骤:
+
+Google Search API:
+1. 访问 Google Cloud Console
+2. 启用 Custom Search API
+3. 创建API密钥
+4. 访问 cse.google.com 创建搜索引擎
+5. 启用"搜索整个网络"
+6. 复制搜索引擎ID (cx参数)
+
+YouTube Data API:
+1. 访问 Google Cloud Console  
+2. 启用 YouTube Data API v3
+3. 创建API密钥
+4. 确保密钥没有域名限制
+
+API密钥格式:
+- Google API密钥通常以 AIzaSy 开头
+- 长度约39个字符
+- 不包含空格或换行符
+
+如果测试仍然失败，请:
+1. 检查API密钥复制是否完整
+2. 确认已启用相应的API服务
+3. 检查API密钥权限设置
+  `;
+  
+  alert(helpText);
 }
 
 async function clearAPIKeys() {

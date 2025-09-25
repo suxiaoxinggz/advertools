@@ -4,7 +4,8 @@ import type { ApiResponse } from '../types/api';
 
 const apiConfig = new Hono();
 
-// In-memory storage for API keys (in production, use encrypted storage)
+// In-memory storage for API keys (resets on service restart)
+// Note: In Cloudflare Workers environment, file system access is not available
 const apiKeys: Record<string, string> = {};
 
 // Get API configuration status
