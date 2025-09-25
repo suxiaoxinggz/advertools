@@ -21,6 +21,11 @@ app.use('/api/*', cors())
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }))
 
+// Handle favicon.ico
+app.get('/favicon.ico', (c) => {
+  return new Response(null, { status: 204 })
+})
+
 // API Routes
 app.route('/api/seo', seo)
 app.route('/api/sem', sem)

@@ -4,6 +4,14 @@
 let currentTool = null;
 let isLoading = false;
 
+// Test function for debugging
+window.testFunction = function() {
+  alert('全局函数测试成功！JavaScript正常工作');
+  console.log('testFunction 被调用');
+};
+
+// This will be set after function definition
+
 // Utility functions
 function showLoading(element) {
   if (element) {
@@ -1066,6 +1074,9 @@ function showAPIConfig() {
           <button onclick="testAllAPIs()" class="btn-secondary">
             <i class="fas fa-plug mr-2"></i>测试连接
           </button>
+          <button onclick="alert('按钮点击测试成功！')" class="btn-secondary">
+            <i class="fas fa-bug mr-2"></i>测试按钮
+          </button>
           <button onclick="clearAPIKeys()" class="btn-secondary">
             <i class="fas fa-trash mr-2"></i>清除密钥
           </button>
@@ -1183,8 +1194,11 @@ async function saveAPIKeys() {
   }
 }
 
-async function testAllAPIs() {
-  console.log('开始测试所有API...'); // Debug log
+function testAllAPIs() {
+  console.log('开始测试所有API...');
+  
+  // Simple alert first to test if function is called
+  alert('API测试功能被调用了！正在测试...');
   
   const apis = ['google_search', 'twitter', 'youtube'];
   const results = [];
@@ -1192,71 +1206,55 @@ async function testAllAPIs() {
   // Show loading
   const statusDiv = document.getElementById('api-status');
   if (statusDiv) {
-    statusDiv.innerHTML = '<div class="flex items-center justify-center py-4"><div class="spinner"></div><span class="ml-2">测试API连接中...</span></div>';
+    statusDiv.innerHTML = '<div class="text-center py-4">🔄 测试API连接中...</div>';
   }
   
-  // Test each API
-  for (const api of apis) {
+  // Test each API sequentially
+  async function runTests() {
     try {
-      console.log(`测试 ${api} API...`); // Debug log
-      const result = await apiCall(`/config/test/${api}`, 'POST');
-      console.log(`${api} API结果:`, result); // Debug log
-      
-      if (result.success) {
-        results.push(`${api}: ✅ 连接成功`);
-      } else {
-        let errorMsg = result.error;
-        // Provide more helpful error messages based on common errors
-        if (errorMsg.includes('API key not valid')) {
-          errorMsg = '❌ API密钥无效 - 请检查密钥格式和权限';
-        } else if (errorMsg.includes('quota')) {
-          errorMsg = '❌ API配额已用完 - 请检查计费设置';  
-        } else if (errorMsg.includes('403')) {
-          errorMsg = '❌ 权限不足 - 请检查API密钥权限';
-        } else if (errorMsg.includes('需要')) {
-          errorMsg = `❌ ${errorMsg}`;
-        } else {
-          errorMsg = `❌ ${errorMsg}`;
+      for (const api of apis) {
+        console.log(`测试 ${api} API...`);
+        
+        try {
+          const response = await fetch(`/api/config/test/${api}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          const result = await response.json();
+          console.log(`${api} API结果:`, result);
+          
+          if (result.success) {
+            results.push(`${api}: ✅ 连接成功`);
+          } else {
+            results.push(`${api}: ❌ ${result.error || '测试失败'}`);
+          }
+        } catch (error) {
+          console.error(`${api} API测试失败:`, error);
+          results.push(`${api}: ❌ 网络错误 - ${error.message}`);
         }
-        results.push(`${api}: ${errorMsg}`);
       }
+      
+      // Show results
+      const resultText = results.join('\n');
+      alert('API测试完成:\n' + resultText);
+      
+      if (statusDiv) {
+        statusDiv.innerHTML = `<div class="bg-gray-50 p-4 rounded">
+          <h4 class="font-bold mb-2">测试结果:</h4>
+          <pre class="text-sm">${resultText}</pre>
+          <button onclick="loadAPIStatus()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">刷新状态</button>
+        </div>`;
+      }
+      
     } catch (error) {
-      console.error(`${api} API测试失败:`, error); // Debug log
-      results.push(`${api}: ❌ 请求失败 - ${error.message}`);
+      console.error('API测试过程失败:', error);
+      alert('API测试失败: ' + error.message);
     }
   }
   
-  // Show results in a better format  
-  const resultHTML = `
-    <div class="bg-white border rounded-lg p-4">
-      <h4 class="font-medium text-gray-900 mb-3">
-        <i class="fas fa-plug mr-2"></i>API连接测试结果:
-      </h4>
-      <div class="space-y-3">
-        ${results.map(result => {
-          const isSuccess = result.includes('✅');
-          return `<div class="flex items-start p-2 rounded ${isSuccess ? 'bg-green-50' : 'bg-red-50'}">
-            <div class="text-sm ${isSuccess ? 'text-green-700' : 'text-red-700'}">${result}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="mt-4 pt-3 border-t flex space-x-2">
-        <button onclick="loadAPIStatus()" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-          <i class="fas fa-sync-alt mr-1"></i>刷新状态
-        </button>
-        <button onclick="showAPIHelp()" class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600">
-          <i class="fas fa-question-circle mr-1"></i>配置帮助
-        </button>
-      </div>
-    </div>
-  `;
-  
-  if (statusDiv) {
-    statusDiv.innerHTML = resultHTML;
-  } else {
-    console.error('找不到api-status元素');
-    alert('测试结果:\n' + results.join('\n'));
-  }
+  // Run the async tests
+  runTests();
 }
 
 // Add API configuration help function
@@ -1320,3 +1318,11 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('API连接失败:', error);
     });
 });
+
+// Make functions globally accessible for onclick handlers
+window.testAllAPIs = testAllAPIs;
+window.saveAPIKeys = saveAPIKeys;
+window.clearAPIKeys = clearAPIKeys;
+window.loadAPIStatus = loadAPIStatus;
+window.showAPIConfig = showAPIConfig;
+window.showAPIHelp = showAPIHelp;
