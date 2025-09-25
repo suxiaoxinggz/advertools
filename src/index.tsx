@@ -11,6 +11,7 @@ import { url } from './routes/url'
 import { social } from './routes/social'
 import { advancedSeo } from './routes/advanced-seo'
 import { exportRouter } from './routes/export'
+import { apiConfig } from './routes/api-config'
 
 const app = new Hono()
 
@@ -28,6 +29,7 @@ app.route('/api/url', url)
 app.route('/api/social', social)
 app.route('/api/advanced-seo', advancedSeo)
 app.route('/api/export', exportRouter)
+app.route('/api/config', apiConfig)
 
 app.use(renderer)
 
@@ -48,6 +50,9 @@ app.get('/', (c) => {
               <a href="#sem" class="text-gray-700 hover:text-primary transition-colors">SEM营销</a>
               <a href="#text" class="text-gray-700 hover:text-primary transition-colors">文本分析</a>
               <a href="#url" class="text-gray-700 hover:text-primary transition-colors">URL工具</a>
+              <button onclick="showAPIConfig()" class="text-gray-700 hover:text-primary transition-colors flex items-center">
+                <i class="fas fa-key mr-1"></i>API配置
+              </button>
             </div>
           </div>
         </div>
@@ -61,7 +66,7 @@ app.get('/', (c) => {
             全能数字营销分析工具
           </h2>
           <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            基于advertools Python包构建的Web平台，提供SEO分析、SEM优化、文本挖掘和URL处理等全方位营销工具
+            基于advertools Python包构建的Web平台，提供约22个核心营销分析功能，包括SEO爬虫、SERP分析、关键词生成、文本挖掘等专业工具
           </p>
         </div>
 
@@ -178,35 +183,86 @@ app.get('/', (c) => {
           </div>
         </div>
 
-        {/* Updated Stats */}
-        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {/* Accurate Stats - Based on Real advertools Functionality */}
+        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-blue-500">25+</div>
-            <div class="text-sm text-gray-600">SEO分析功能</div>
+            <div class="text-2xl font-bold text-blue-500">8</div>
+            <div class="text-sm text-gray-600">SEO核心工具</div>
+            <div class="text-xs text-gray-400 mt-1">爬虫、SERP、Sitemap等</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-green-500">15+</div>
+            <div class="text-2xl font-bold text-green-500">3</div>
             <div class="text-sm text-gray-600">SEM营销工具</div>
+            <div class="text-xs text-gray-400 mt-1">关键词生成、广告创建</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-purple-500">18+</div>
-            <div class="text-sm text-gray-600">文本分析方法</div>
+            <div class="text-2xl font-bold text-purple-500">6</div>
+            <div class="text-sm text-gray-600">文本分析工具</div>
+            <div class="text-xs text-gray-400 mt-1">词频、提取、Emoji等</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-orange-500">12+</div>
-            <div class="text-sm text-gray-600">URL处理功能</div>
+            <div class="text-2xl font-bold text-orange-500">5</div>
+            <div class="text-sm text-gray-600">社媒API工具</div>
+            <div class="text-xs text-gray-400 mt-1">Twitter、YouTube集成</div>
           </div>
-          <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-pink-500">10+</div>
-            <div class="text-sm text-gray-600">社媒分析工具</div>
-          </div>
-          <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-indigo-500">8+</div>
-            <div class="text-sm text-gray-600">高级SEO工具</div>
-          </div>
-          <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-teal-500">6+</div>
-            <div class="text-sm text-gray-600">导出格式</div>
+        </div>
+        
+        {/* Real advertools Core Features Summary */}
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+            基于advertools包的核心功能（约22个主要函数）
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <strong class="text-blue-700">SEO模块</strong>
+              <ul class="mt-1 text-blue-600">
+                <li>• spider (SEO爬虫)</li>
+                <li>• robotstxt_to_df</li>
+                <li>• sitemap_to_df</li>
+                <li>• serp_goog (SERP分析)</li>
+              </ul>
+            </div>
+            <div class="p-3 bg-green-50 rounded-lg">
+              <strong class="text-green-700">SEM模块</strong>
+              <ul class="mt-1 text-green-600">
+                <li>• kw_generate</li>
+                <li>• ad_create</li>
+                <li>• ad_from_string</li>
+              </ul>
+            </div>
+            <div class="p-3 bg-purple-50 rounded-lg">
+              <strong class="text-purple-700">文本分析</strong>
+              <ul class="mt-1 text-purple-600">
+                <li>• word_frequency</li>
+                <li>• extract_* 函数族</li>
+                <li>• emoji 处理</li>
+                <li>• stopwords</li>
+              </ul>
+            </div>
+            <div class="p-3 bg-orange-50 rounded-lg">
+              <strong class="text-orange-700">URL工具</strong>
+              <ul class="mt-1 text-orange-600">
+                <li>• url_to_df</li>
+                <li>• *_to_df 转换器</li>
+              </ul>
+            </div>
+            <div class="p-3 bg-pink-50 rounded-lg">
+              <strong class="text-pink-700">社交媒体API</strong>
+              <ul class="mt-1 text-pink-600">
+                <li>• twitter 模块</li>
+                <li>• youtube 模块</li>
+                <li>• knowledge_graph</li>
+              </ul>
+            </div>
+            <div class="p-3 bg-indigo-50 rounded-lg">
+              <strong class="text-indigo-700">高级功能</strong>
+              <ul class="mt-1 text-indigo-600">
+                <li>• crawlytics</li>
+                <li>• logs_to_df</li>
+                <li>• reverse_dns_lookup</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

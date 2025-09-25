@@ -107,13 +107,46 @@ seo.post('/serp', async (c) => {
       }, 400);
     }
     
-    // Generate mock SERP data (in real app, would connect to Google Custom Search API)
+    // Try to use real Google Search API first
+    try {
+      const { getApiKey } = await import('./api-config');
+      const apiKey = getApiKey('google_search_api_key');
+      const cx = getApiKey('google_search_cx');
+      
+      if (apiKey && cx) {
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(keyword)}&num=${Math.min(count, 10)}`;
+        
+        const response = await fetch(searchUrl);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          const results: SerpResult[] = (data.items || []).map((item: any, index: number) => ({
+            position: index + 1,
+            title: item.title,
+            url: item.link,
+            snippet: item.snippet,
+            domain: new URL(item.link).hostname
+          }));
+          
+          return c.json<ApiResponse<SerpResult[]>>({
+            success: true,
+            data: results,
+            message: `成功获取"${keyword}"的前${results.length}个搜索结果 (Google API)`
+          });
+        }
+      }
+    } catch (error) {
+      console.log('Google API failed, falling back to mock data:', error);
+    }
+    
+    // Fallback to mock data if API is not configured or fails
     const results = generateMockSerp(keyword, Math.min(count, 50));
     
     return c.json<ApiResponse<SerpResult[]>>({
       success: true,
       data: results,
-      message: `成功获取"${keyword}"的前${results.length}个搜索结果`
+      message: `获取"${keyword}"的模拟搜索结果 (需要配置Google Search API获取真实数据)`
     });
     
   } catch (error) {

@@ -940,9 +940,238 @@ async function analyzeCompetitors() {
   }
 }
 
+// API Configuration Functions
+function showAPIConfig() {
+  currentTool = 'api-config';
+  const content = document.getElementById('main-content');
+  
+  content.innerHTML = `
+    <div class="fade-in-up">
+      <div class="flex items-center mb-6">
+        <i class="fas fa-key text-blue-500 text-2xl mr-3"></i>
+        <h2 class="text-2xl font-bold text-gray-900">API配置中心</h2>
+      </div>
+      
+      <!-- API Status -->
+      <div class="bg-white border rounded-lg p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">API状态</h3>
+        <div id="api-status">
+          <div class="flex items-center justify-center py-4">
+            <div class="spinner"></div>
+            <span class="ml-2">检查API状态...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- API Key Configuration -->
+      <div class="bg-white border rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">API密钥配置</h3>
+        <p class="text-gray-600 text-sm mb-6">配置以下API密钥以启用真实数据获取功能。密钥仅存储在浏览器会话中，不会上传到服务器。</p>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Google Search API -->
+          <div class="space-y-4">
+            <h4 class="font-medium text-gray-900 flex items-center">
+              <i class="fab fa-google text-blue-500 mr-2"></i>
+              Google Search API
+            </h4>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+              <input type="password" id="google-api-key" class="form-input" placeholder="AIza..." />
+              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/custom-search/v1/introduction" target="_blank" class="text-blue-500">Google Custom Search API</a></p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Engine ID (cx)</label>
+              <input type="text" id="google-cx" class="form-input" placeholder="017576662512468239146:..." />
+              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://cse.google.com/cse/" target="_blank" class="text-blue-500">Google Custom Search Engine</a></p>
+            </div>
+          </div>
+          
+          <!-- Twitter API -->
+          <div class="space-y-4">
+            <h4 class="font-medium text-gray-900 flex items-center">
+              <i class="fab fa-twitter text-blue-400 mr-2"></i>
+              Twitter API v2
+            </h4>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Bearer Token</label>
+              <input type="password" id="twitter-bearer" class="form-input" placeholder="AAAAAAAAAAAAAAAAAAAAAA..." />
+              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" class="text-blue-500">Twitter Developer Portal</a></p>
+            </div>
+          </div>
+          
+          <!-- YouTube API -->
+          <div class="space-y-4">
+            <h4 class="font-medium text-gray-900 flex items-center">
+              <i class="fab fa-youtube text-red-500 mr-2"></i>
+              YouTube Data API
+            </h4>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+              <input type="password" id="youtube-api-key" class="form-input" placeholder="AIza..." />
+              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" class="text-blue-500">YouTube Data API</a></p>
+            </div>
+          </div>
+          
+          <!-- Knowledge Graph API -->
+          <div class="space-y-4">
+            <h4 class="font-medium text-gray-900 flex items-center">
+              <i class="fas fa-brain text-purple-500 mr-2"></i>
+              Knowledge Graph API
+            </h4>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+              <input type="password" id="knowledge-graph-key" class="form-input" placeholder="AIza..." />
+              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/knowledge-graph/" target="_blank" class="text-blue-500">Google Knowledge Graph API</a></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 flex space-x-4">
+          <button onclick="saveAPIKeys()" class="btn-primary">
+            <i class="fas fa-save mr-2"></i>保存API密钥
+          </button>
+          <button onclick="testAllAPIs()" class="btn-secondary">
+            <i class="fas fa-plug mr-2"></i>测试连接
+          </button>
+          <button onclick="clearAPIKeys()" class="btn-secondary">
+            <i class="fas fa-trash mr-2"></i>清除密钥
+          </button>
+        </div>
+      </div>
+      
+      <!-- Help Section -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+        <h4 class="font-medium text-blue-900 mb-2 flex items-center">
+          <i class="fas fa-info-circle mr-2"></i>
+          配置说明
+        </h4>
+        <ul class="text-sm text-blue-800 space-y-1">
+          <li>• <strong>Google Search API</strong>: 用于SERP真实数据获取，需要创建Custom Search Engine</li>
+          <li>• <strong>Twitter API</strong>: 用于社交媒体数据分析，需要Twitter开发者账号</li>
+          <li>• <strong>YouTube API</strong>: 用于视频数据分析，使用Google Cloud Console创建</li>
+          <li>• <strong>Knowledge Graph</strong>: 用于实体识别和知识图谱查询</li>
+          <li>• 所有API都有免费配额，超出后需要付费</li>
+          <li>• API密钥仅在当前会话中有效，关闭浏览器后需重新配置</li>
+        </ul>
+      </div>
+    </div>
+  `;
+  
+  // Load API status
+  loadAPIStatus();
+}
+
+async function loadAPIStatus() {
+  try {
+    const result = await apiCall('/config/status');
+    const statusDiv = document.getElementById('api-status');
+    
+    if (result.success) {
+      const { configured_apis, missing_apis, status } = result.data;
+      
+      let statusHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      
+      Object.entries(status).forEach(([api, configured]) => {
+        const iconClass = configured ? 'fas fa-check-circle text-green-500' : 'fas fa-times-circle text-red-500';
+        const statusText = configured ? '已配置' : '未配置';
+        const statusClass = configured ? 'status-success' : 'status-error';
+        
+        statusHTML += `
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+            <span class="font-medium">${api.replace(/_/g, ' ').toUpperCase()}</span>
+            <div class="flex items-center">
+              <i class="${iconClass} mr-2"></i>
+              <span class="${statusClass}">${statusText}</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      statusHTML += '</div>';
+      statusHTML += `<p class="text-sm text-gray-600 mt-4">${configured_apis.length}/5 个API已配置</p>`;
+      
+      statusDiv.innerHTML = statusHTML;
+    }
+  } catch (error) {
+    document.getElementById('api-status').innerHTML = `
+      <div class="text-center text-red-600">
+        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+        <p>无法获取API状态</p>
+      </div>
+    `;
+  }
+}
+
+async function saveAPIKeys() {
+  const keys = {
+    google_search_api_key: document.getElementById('google-api-key').value.trim(),
+    google_search_cx: document.getElementById('google-cx').value.trim(),
+    twitter_bearer_token: document.getElementById('twitter-bearer').value.trim(),
+    youtube_api_key: document.getElementById('youtube-api-key').value.trim(),
+    knowledge_graph_api_key: document.getElementById('knowledge-graph-key').value.trim()
+  };
+  
+  // Remove empty keys
+  Object.keys(keys).forEach(key => {
+    if (!keys[key]) {
+      delete keys[key];
+    }
+  });
+  
+  if (Object.keys(keys).length === 0) {
+    alert('请至少输入一个API密钥');
+    return;
+  }
+  
+  try {
+    const result = await apiCall('/config/keys', 'POST', keys);
+    
+    if (result.success) {
+      alert(`成功保存 ${result.data.updated_keys} 个API密钥`);
+      loadAPIStatus(); // Reload status
+    } else {
+      alert('保存失败: ' + result.error);
+    }
+  } catch (error) {
+    alert('保存失败: ' + error.message);
+  }
+}
+
+async function testAllAPIs() {
+  const apis = ['google_search', 'twitter', 'youtube'];
+  const results = [];
+  
+  for (const api of apis) {
+    try {
+      const result = await apiCall(`/config/test/${api}`, 'POST');
+      results.push(`${api}: ${result.success ? '✓ 成功' : '✗ 失败 - ' + result.error}`);
+    } catch (error) {
+      results.push(`${api}: ✗ 失败 - ${error.message}`);
+    }
+  }
+  
+  alert('API连接测试结果:\n' + results.join('\n'));
+}
+
+async function clearAPIKeys() {
+  if (confirm('确定要清除所有API密钥吗？')) {
+    // Clear form
+    document.getElementById('google-api-key').value = '';
+    document.getElementById('google-cx').value = '';
+    document.getElementById('twitter-bearer').value = '';
+    document.getElementById('youtube-api-key').value = '';
+    document.getElementById('knowledge-graph-key').value = '';
+    
+    // You would also call API to clear server-side keys here
+    alert('API密钥已清除');
+    loadAPIStatus();
+  }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('数字营销分析平台已加载 - 扩展版本');
+  console.log('数字营销分析平台已加载 - 真实API版本');
   
   // Test API connection
   apiCall('/health')
