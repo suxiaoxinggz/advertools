@@ -660,9 +660,289 @@ async function validateURLs() {
   }
 }
 
+// Social Media Tools Functions
+function showSocialTools() {
+  currentTool = 'social';
+  const content = document.getElementById('main-content');
+  
+  content.innerHTML = `
+    <div class="fade-in-up">
+      <div class="flex items-center mb-6">
+        <i class="fas fa-share-alt text-pink-500 text-2xl mr-3"></i>
+        <h2 class="text-2xl font-bold text-gray-900">社交媒体分析工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Social Media Post Analysis -->
+        <div class="bg-white border rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-comments text-pink-500 mr-2"></i>
+            社交媒体帖子分析
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">帖子内容（每行一个）</label>
+              <textarea id="social-posts" class="form-textarea" placeholder="输入社交媒体帖子内容，支持#标签和@提及"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">分析类型</label>
+              <select id="social-analysis-type" class="form-input">
+                <option value="engagement">参与度预测</option>
+                <option value="sentiment">情感分析</option>
+                <option value="hashtags">标签分析</option>
+                <option value="mentions">提及分析</option>
+              </select>
+            </div>
+            <button onclick="analyzeSocialPosts()" class="btn-primary w-full">
+              <i class="fas fa-chart-line mr-2"></i>分析帖子
+            </button>
+          </div>
+        </div>
+        
+        <!-- Trend Analysis -->
+        <div class="bg-white border rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-trending-up text-green-500 mr-2"></i>
+            话题趋势分析
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">话题标签</label>
+              <input type="text" id="trend-hashtags" class="form-input" placeholder="输入话题标签，用逗号分隔" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">时间周期</label>
+              <select id="trend-period" class="form-input">
+                <option value="24h">24小时</option>
+                <option value="7d">7天</option>
+                <option value="30d">30天</option>
+              </select>
+            </div>
+            <button onclick="analyzeTrends()" class="btn-success w-full">
+              <i class="fas fa-search mr-2"></i>分析趋势
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results Area -->
+      <div class="mt-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">分析结果</h3>
+        <div id="social-results" class="result-container">
+          <p class="text-gray-500 text-center py-8">选择上方工具开始分析</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showAdvancedSEO() {
+  currentTool = 'advanced-seo';
+  const content = document.getElementById('main-content');
+  
+  content.innerHTML = `
+    <div class="fade-in-up">
+      <div class="flex items-center mb-6">
+        <i class="fas fa-cogs text-indigo-500 text-2xl mr-3"></i>
+        <h2 class="text-2xl font-bold text-gray-900">高级SEO分析工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Log Analysis -->
+        <div class="bg-white border rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+            日志文件分析
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">日志内容</label>
+              <textarea id="log-content" class="form-textarea" placeholder="粘贴Apache/Nginx访问日志"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">分析类型</label>
+              <select id="log-analysis-type" class="form-input">
+                <option value="crawlers">爬虫活动</option>
+                <option value="errors">错误分析</option>
+                <option value="traffic">流量模式</option>
+                <option value="performance">性能分析</option>
+              </select>
+            </div>
+            <button onclick="analyzeLogFile()" class="btn-primary w-full">
+              <i class="fas fa-search mr-2"></i>分析日志
+            </button>
+          </div>
+        </div>
+        
+        <!-- Competitor Analysis -->
+        <div class="bg-white border rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-users text-orange-500 mr-2"></i>
+            竞品分析
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">目标域名</label>
+              <input type="text" id="target-domain" class="form-input" placeholder="example.com" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">竞争对手域名（每行一个）</label>
+              <textarea id="competitor-domains" class="form-textarea" placeholder="competitor1.com&#10;competitor2.com"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">分析维度</label>
+              <select id="competitor-analysis-type" class="form-input">
+                <option value="keywords">关键词差距</option>
+                <option value="backlinks">外链对比</option>
+                <option value="content">内容分析</option>
+                <option value="technical">技术SEO</option>
+              </select>
+            </div>
+            <button onclick="analyzeCompetitors()" class="btn-secondary w-full">
+              <i class="fas fa-chart-bar mr-2"></i>对比分析
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results Area -->
+      <div class="mt-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">分析结果</h3>
+        <div id="advanced-seo-results" class="result-container">
+          <p class="text-gray-500 text-center py-8">选择上方工具开始分析</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showExportTools() {
+  currentTool = 'export';
+  const content = document.getElementById('main-content');
+  
+  content.innerHTML = `
+    <div class="fade-in-up">
+      <div class="flex items-center mb-6">
+        <i class="fas fa-download text-teal-500 text-2xl mr-3"></i>
+        <h2 class="text-2xl font-bold text-gray-900">数据导出工具</h2>
+      </div>
+      
+      <div class="bg-white border rounded-lg p-6">
+        <div class="text-center text-gray-500 py-12">
+          <i class="fas fa-info-circle text-4xl mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">导出功能说明</h3>
+          <p class="mb-4">使用其他分析工具获得结果后，可以在结果页面找到导出按钮</p>
+          <p class="text-sm">支持导出格式：CSV、JSON、HTML报告、图表配置</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Social Media Analysis Functions
+async function analyzeSocialPosts() {
+  const posts = document.getElementById('social-posts').value.trim().split('\n').filter(p => p.trim());
+  const analysisType = document.getElementById('social-analysis-type').value;
+  const resultsDiv = document.getElementById('social-results');
+  
+  if (posts.length === 0) {
+    showError(resultsDiv, '请输入至少一个社交媒体帖子');
+    return;
+  }
+  
+  showLoading(resultsDiv);
+  
+  try {
+    const result = await apiCall('/social/analyze-posts', 'POST', { 
+      posts, 
+      analysis_type: analysisType 
+    });
+    showSuccess(resultsDiv, '社交媒体分析完成', result);
+  } catch (error) {
+    showError(resultsDiv, error.message);
+  }
+}
+
+async function analyzeTrends() {
+  const hashtags = document.getElementById('trend-hashtags').value.trim().split(',').map(h => h.trim()).filter(h => h);
+  const timePeriod = document.getElementById('trend-period').value;
+  const resultsDiv = document.getElementById('social-results');
+  
+  if (hashtags.length === 0) {
+    showError(resultsDiv, '请输入至少一个话题标签');
+    return;
+  }
+  
+  showLoading(resultsDiv);
+  
+  try {
+    const result = await apiCall('/social/trend-analysis', 'POST', { 
+      hashtags, 
+      time_period: timePeriod 
+    });
+    showSuccess(resultsDiv, '趋势分析完成', result);
+  } catch (error) {
+    showError(resultsDiv, error.message);
+  }
+}
+
+// Advanced SEO Functions
+async function analyzeLogFile() {
+  const logContent = document.getElementById('log-content').value;
+  const analysisType = document.getElementById('log-analysis-type').value;
+  const resultsDiv = document.getElementById('advanced-seo-results');
+  
+  if (!logContent.trim()) {
+    showError(resultsDiv, '请提供日志文件内容');
+    return;
+  }
+  
+  showLoading(resultsDiv);
+  
+  try {
+    const result = await apiCall('/advanced-seo/log-analysis', 'POST', { 
+      log_content: logContent, 
+      analysis_type: analysisType 
+    });
+    showSuccess(resultsDiv, '日志分析完成', result);
+  } catch (error) {
+    showError(resultsDiv, error.message);
+  }
+}
+
+async function analyzeCompetitors() {
+  const targetDomain = document.getElementById('target-domain').value.trim();
+  const competitorDomains = document.getElementById('competitor-domains').value.trim().split('\n').filter(d => d.trim());
+  const analysisType = document.getElementById('competitor-analysis-type').value;
+  const resultsDiv = document.getElementById('advanced-seo-results');
+  
+  if (!targetDomain) {
+    showError(resultsDiv, '请输入目标域名');
+    return;
+  }
+  
+  if (competitorDomains.length === 0) {
+    showError(resultsDiv, '请输入至少一个竞争对手域名');
+    return;
+  }
+  
+  showLoading(resultsDiv);
+  
+  try {
+    const result = await apiCall('/advanced-seo/competitor-analysis', 'POST', { 
+      target_domain: targetDomain,
+      competitor_domains: competitorDomains,
+      analysis_type: analysisType 
+    });
+    showSuccess(resultsDiv, '竞品分析完成', result);
+  } catch (error) {
+    showError(resultsDiv, error.message);
+  }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('数字营销分析平台已加载');
+  console.log('数字营销分析平台已加载 - 扩展版本');
   
   // Test API connection
   apiCall('/health')

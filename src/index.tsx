@@ -8,6 +8,9 @@ import { seo } from './routes/seo'
 import { sem } from './routes/sem'
 import { text } from './routes/text'
 import { url } from './routes/url'
+import { social } from './routes/social'
+import { advancedSeo } from './routes/advanced-seo'
+import { exportRouter } from './routes/export'
 
 const app = new Hono()
 
@@ -22,6 +25,9 @@ app.route('/api/seo', seo)
 app.route('/api/sem', sem)
 app.route('/api/text', text)
 app.route('/api/url', url)
+app.route('/api/social', social)
+app.route('/api/advanced-seo', advancedSeo)
+app.route('/api/export', exportRouter)
 
 app.use(renderer)
 
@@ -127,23 +133,80 @@ app.get('/', (c) => {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div class="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Additional Tool Categories */}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* Social Media Tools */}
+          <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="text-center">
+              <div class="bg-gradient-to-r from-pink-500 to-pink-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-share-alt text-white text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">社交媒体分析</h3>
+              <p class="text-gray-600 text-sm mb-4">帖子分析、趋势监控、内容优化</p>
+              <button onclick="showSocialTools()" class="w-full bg-pink-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition-colors">
+                分析社媒
+              </button>
+            </div>
+          </div>
+
+          {/* Advanced SEO */}
+          <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="text-center">
+              <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-cogs text-white text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">高级SEO工具</h3>
+              <p class="text-gray-600 text-sm mb-4">日志分析、竞品分析、性能监控</p>
+              <button onclick="showAdvancedSEO()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg transition-colors">
+                高级分析
+              </button>
+            </div>
+          </div>
+
+          {/* Data Export */}
+          <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="text-center">
+              <div class="bg-gradient-to-r from-teal-500 to-teal-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-download text-white text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">数据导出</h3>
+              <p class="text-gray-600 text-sm mb-4">CSV导出、报告生成、图表制作</p>
+              <button onclick="showExportTools()" class="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded-lg transition-colors">
+                导出数据
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Updated Stats */}
+        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-blue-500">15+</div>
+            <div class="text-2xl font-bold text-blue-500">25+</div>
             <div class="text-sm text-gray-600">SEO分析功能</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-green-500">8+</div>
+            <div class="text-2xl font-bold text-green-500">15+</div>
             <div class="text-sm text-gray-600">SEM营销工具</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-purple-500">12+</div>
+            <div class="text-2xl font-bold text-purple-500">18+</div>
             <div class="text-sm text-gray-600">文本分析方法</div>
           </div>
           <div class="bg-white rounded-lg p-6 text-center shadow-md">
-            <div class="text-2xl font-bold text-orange-500">6+</div>
+            <div class="text-2xl font-bold text-orange-500">12+</div>
             <div class="text-sm text-gray-600">URL处理功能</div>
+          </div>
+          <div class="bg-white rounded-lg p-6 text-center shadow-md">
+            <div class="text-2xl font-bold text-pink-500">10+</div>
+            <div class="text-sm text-gray-600">社媒分析工具</div>
+          </div>
+          <div class="bg-white rounded-lg p-6 text-center shadow-md">
+            <div class="text-2xl font-bold text-indigo-500">8+</div>
+            <div class="text-sm text-gray-600">高级SEO工具</div>
+          </div>
+          <div class="bg-white rounded-lg p-6 text-center shadow-md">
+            <div class="text-2xl font-bold text-teal-500">6+</div>
+            <div class="text-sm text-gray-600">导出格式</div>
           </div>
         </div>
       </div>
