@@ -974,12 +974,20 @@ function showAPIConfig() {
           <p class="text-blue-700 text-sm mb-3">
             <strong>SERP分析确实需要API！</strong> advertools的serp_goog函数需要Google Custom Search API才能获取真实搜索结果：
           </p>
-          <ul class="text-blue-700 text-sm space-y-1 ml-4">
-            <li>• 需要 <strong>Google Custom Search API Key</strong> (每日前100次请求免费)</li>
-            <li>• 需要 <strong>Custom Search Engine ID (cx)</strong> (需要创建CSE并启用"搜索整个网络")</li>
-            <li>• 不配置API时只能使用模拟数据进行功能演示</li>
-            <li>• 配置后可获取真实的Google搜索结果</li>
-          </ul>
+          <div class="text-blue-700 text-sm space-y-2">
+            <p><strong>配置步骤：</strong></p>
+            <ol class="ml-4 space-y-1 list-decimal">
+              <li>获取 <strong>Google Custom Search API Key</strong>: 
+                <a href="https://developers.google.com/custom-search/v1/introduction" target="_blank" class="text-blue-600 underline">Google Cloud Console</a>
+              </li>
+              <li>创建 <strong>Custom Search Engine</strong>: 
+                <a href="https://cse.google.com/cse/" target="_blank" class="text-blue-600 underline">CSE控制台</a>
+              </li>
+              <li><strong>重要</strong>: 在CSE设置中启用"搜索整个网络"功能</li>
+              <li>复制Search Engine ID (cx参数) 到下方输入框</li>
+            </ol>
+            <p class="text-blue-600 font-medium">⚠️ 两个参数都必须配置才能测试成功</p>
+          </div>
         </div>
         <p class="text-gray-600 text-sm mb-6">配置以下API密钥以启用真实数据获取功能。密钥仅存储在浏览器会话中，不会上传到服务器。</p>
         
@@ -996,9 +1004,12 @@ function showAPIConfig() {
               <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/custom-search/v1/introduction" target="_blank" class="text-blue-500">Google Custom Search API</a></p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Search Engine ID (cx)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Engine ID (cx) <span class="text-red-500">*必需</span></label>
               <input type="text" id="google-cx" class="form-input" placeholder="017576662512468239146:..." />
-              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://cse.google.com/cse/" target="_blank" class="text-blue-500">Google Custom Search Engine</a></p>
+              <div class="text-xs text-gray-500 mt-1 space-y-1">
+                <p>获取地址: <a href="https://cse.google.com/cse/" target="_blank" class="text-blue-500">Google Custom Search Engine</a></p>
+                <p class="text-orange-600">⚠️ 必须创建CSE并启用"搜索整个网络"功能</p>
+              </div>
             </div>
           </div>
           
@@ -1023,8 +1034,11 @@ function showAPIConfig() {
             </h4>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-              <input type="password" id="youtube-api-key" class="form-input" placeholder="AIza..." />
-              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" class="text-blue-500">YouTube Data API</a></p>
+              <input type="password" id="youtube-api-key" class="form-input" placeholder="AIzaSy..." />
+              <div class="text-xs text-gray-500 mt-1 space-y-1">
+                <p>获取步骤: 1. <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-500">Google Cloud Console</a> → 2. 启用YouTube Data API v3 → 3. 创建API密钥</p>
+                <p class="text-orange-600">⚠️ 确保API密钥有YouTube Data API v3权限</p>
+              </div>
             </div>
           </div>
           
@@ -1036,8 +1050,11 @@ function showAPIConfig() {
             </h4>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-              <input type="password" id="knowledge-graph-key" class="form-input" placeholder="AIza..." />
-              <p class="text-xs text-gray-500 mt-1">获取地址: <a href="https://developers.google.com/knowledge-graph/" target="_blank" class="text-blue-500">Google Knowledge Graph API</a></p>
+              <input type="password" id="knowledge-graph-key" class="form-input" placeholder="AIzaSy..." />
+              <div class="text-xs text-gray-500 mt-1 space-y-1">
+                <p>获取步骤: 1. <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-500">Google Cloud Console</a> → 2. 启用Knowledge Graph Search API → 3. 创建API密钥</p>
+                <p class="text-orange-600">⚠️ 注意: 这个API可能需要申请访问权限</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1157,16 +1174,46 @@ async function testAllAPIs() {
   const apis = ['google_search', 'twitter', 'youtube'];
   const results = [];
   
+  // Show loading
+  const statusDiv = document.getElementById('api-status');
+  if (statusDiv) {
+    statusDiv.innerHTML = '<div class="flex items-center justify-center py-4"><div class="spinner"></div><span class="ml-2">测试API连接中...</span></div>';
+  }
+  
   for (const api of apis) {
     try {
       const result = await apiCall(`/config/test/${api}`, 'POST');
-      results.push(`${api}: ${result.success ? '✓ 成功' : '✗ 失败 - ' + result.error}`);
+      if (result.success) {
+        results.push(`${api}: ✅ 连接成功`);
+      } else {
+        let errorMsg = result.error;
+        // Provide more helpful error messages
+        if (errorMsg.includes('API key not valid')) {
+          errorMsg = 'API密钥无效，请检查密钥是否正确复制';
+        } else if (errorMsg.includes('quota')) {
+          errorMsg = 'API配额已用完，请检查计费设置';
+        }
+        results.push(`${api}: ❌ ${errorMsg}`);
+      }
     } catch (error) {
-      results.push(`${api}: ✗ 失败 - ${error.message}`);
+      results.push(`${api}: ❌ 网络错误 - ${error.message}`);
     }
   }
   
-  alert('API连接测试结果:\n' + results.join('\n'));
+  // Show results in a better format
+  const resultHTML = `
+    <div class="bg-white border rounded-lg p-4">
+      <h4 class="font-medium text-gray-900 mb-3">API连接测试结果:</h4>
+      <div class="space-y-2">
+        ${results.map(result => `<div class="text-sm ${result.includes('✅') ? 'text-green-700' : 'text-red-700'}">${result}</div>`).join('')}
+      </div>
+      <button onclick="loadAPIStatus()" class="mt-3 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">刷新状态</button>
+    </div>
+  `;
+  
+  if (statusDiv) {
+    statusDiv.innerHTML = resultHTML;
+  }
 }
 
 async function clearAPIKeys() {

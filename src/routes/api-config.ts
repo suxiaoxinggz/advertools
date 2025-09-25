@@ -149,9 +149,22 @@ apiConfig.post('/test/:api', async (c) => {
     });
     
   } catch (error) {
+    let errorMessage = error instanceof Error ? error.message : 'API连接测试失败';
+    
+    // Provide more helpful error messages
+    if (errorMessage.includes('403')) {
+      errorMessage = 'API密钥无效或权限不足 (HTTP 403)';
+    } else if (errorMessage.includes('400')) {
+      errorMessage = 'API请求参数错误，请检查CSE ID是否正确 (HTTP 400)';
+    } else if (errorMessage.includes('404')) {
+      errorMessage = 'API端点不存在，请检查API密钥和CSE配置 (HTTP 404)';
+    } else if (errorMessage.includes('429')) {
+      errorMessage = 'API请求频率过高，请稍后再试 (HTTP 429)';
+    }
+    
     return c.json<ApiResponse>({
       success: false,
-      error: error instanceof Error ? error.message : 'API连接测试失败'
+      error: errorMessage
     }, 400);
   }
 });
