@@ -966,6 +966,21 @@ function showAPIConfig() {
       <!-- API Key Configuration -->
       <div class="bg-white border rounded-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">API密钥配置</h3>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h4 class="font-medium text-blue-800 mb-2 flex items-center">
+            <i class="fas fa-info-circle mr-2"></i>
+            SERP功能说明
+          </h4>
+          <p class="text-blue-700 text-sm mb-3">
+            <strong>SERP分析确实需要API！</strong> advertools的serp_goog函数需要Google Custom Search API才能获取真实搜索结果：
+          </p>
+          <ul class="text-blue-700 text-sm space-y-1 ml-4">
+            <li>• 需要 <strong>Google Custom Search API Key</strong> (每日前100次请求免费)</li>
+            <li>• 需要 <strong>Custom Search Engine ID (cx)</strong> (需要创建CSE并启用"搜索整个网络")</li>
+            <li>• 不配置API时只能使用模拟数据进行功能演示</li>
+            <li>• 配置后可获取真实的Google搜索结果</li>
+          </ul>
+        </div>
         <p class="text-gray-600 text-sm mb-6">配置以下API密钥以启用真实数据获取功能。密钥仅存储在浏览器会话中，不会上传到服务器。</p>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

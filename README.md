@@ -17,7 +17,7 @@
 
 #### 1. SEO分析工具 🔍 (8个核心功能)
 - **spider**: SEO爬虫分析，提取页面SEO元素
-- **serp_goog**: Google SERP分析 (支持真实Google Search API)
+- **serp_goog**: Google SERP分析 ⚠️ **需要API配置** (Google Custom Search API + CSE ID)
 - **sitemap_to_df**: XML Sitemap解析和分析
 - **robotstxt_to_df**: Robots.txt分析
 - **knowledge_graph**: Google Knowledge Graph集成
@@ -51,10 +51,15 @@
 
 ### 🔑 真实API集成支持
 平台提供**API配置中心**，支持以下真实API服务：
-- **Google Custom Search API**: 真实SERP数据获取
+
+⚠️ **重要说明**: **SERP功能需要API配置才能获取真实数据**
+- **Google Custom Search API Key**: 每日前100次请求免费
+- **Custom Search Engine ID (cx)**: 需在https://cse.google.com创建并启用"搜索整个网络"
 - **Twitter API v2**: 社交媒体数据分析
 - **YouTube Data API**: 视频内容分析
 - **Google Knowledge Graph API**: 实体知识图谱
+
+**未配置API时**: 所有功能仍可使用，但SERP等功能将返回模拟数据进行演示
 
 ## 🌐 访问地址
 
