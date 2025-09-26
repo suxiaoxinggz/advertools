@@ -48,7 +48,12 @@ function showSuccess(element, message, data = null) {
     `;
     
     if (data) {
-      content += formatResults(data);
+      // 修复：如果data是API响应对象，提取其中的data字段
+      let actualData = data;
+      if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+        actualData = data.data;
+      }
+      content += formatResults(actualData);
     }
     
     element.innerHTML = content;
@@ -56,6 +61,12 @@ function showSuccess(element, message, data = null) {
 }
 
 function formatResults(data) {
+  console.log('formatResults 接收到的数据:', data); // Debug log
+  
+  if (!data) {
+    return '<p class="text-gray-500 text-center py-4">没有数据</p>';
+  }
+  
   if (Array.isArray(data)) {
     if (data.length === 0) {
       return '<p class="text-gray-500 text-center py-4">没有找到结果</p>';
@@ -65,21 +76,41 @@ function formatResults(data) {
     const headers = Object.keys(data[0] || {});
     if (headers.length === 0) return '<p class="text-gray-500 text-center py-4">数据格式错误</p>';
     
-    let table = '<div class="result-table"><table class="w-full">';
-    table += '<thead><tr>';
+    let table = '<div class="result-table overflow-x-auto"><table class="w-full border-collapse border border-gray-200">';
+    table += '<thead class="bg-gray-50"><tr>';
     headers.forEach(header => {
-      table += `<th>${header}</th>`;
+      const displayHeader = header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      table += `<th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">${displayHeader}</th>`;
     });
     table += '</tr></thead><tbody>';
     
-    data.slice(0, 50).forEach(row => { // Limit to 50 rows for display
-      table += '<tr>';
+    data.slice(0, 50).forEach((row, index) => { // Limit to 50 rows for display
+      table += `<tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">`;
       headers.forEach(header => {
-        const value = row[header] || '';
-        const displayValue = typeof value === 'string' && value.length > 50 
-          ? value.substring(0, 50) + '...' 
-          : value;
-        table += `<td>${displayValue}</td>`;
+        let value = row[header];
+        let displayValue = '';
+        
+        if (value === null || value === undefined) {
+          displayValue = '-';
+        } else if (Array.isArray(value)) {
+          // 处理数组值（如h1, h2, h3标签）
+          displayValue = value.length > 0 ? value.join(', ') : '-';
+          if (displayValue.length > 100) {
+            displayValue = displayValue.substring(0, 100) + '...';
+          }
+        } else if (typeof value === 'object') {
+          // 处理对象值
+          displayValue = JSON.stringify(value);
+          if (displayValue.length > 100) {
+            displayValue = displayValue.substring(0, 100) + '...';
+          }
+        } else if (typeof value === 'string' && value.length > 100) {
+          displayValue = value.substring(0, 100) + '...';
+        } else {
+          displayValue = String(value);
+        }
+        
+        table += `<td class="border border-gray-200 px-3 py-2 text-sm">${displayValue}</td>`;
       });
       table += '</tr>';
     });
@@ -91,14 +122,25 @@ function formatResults(data) {
     }
     
     return table;
-  } else if (typeof data === 'object') {
+  } else if (typeof data === 'object' && data !== null) {
     // Display object as key-value pairs
     let content = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
     Object.entries(data).forEach(([key, value]) => {
+      let displayValue = '';
+      if (Array.isArray(value)) {
+        displayValue = value.join(', ');
+      } else if (typeof value === 'object' && value !== null) {
+        displayValue = JSON.stringify(value, null, 2);
+      } else {
+        displayValue = String(value);
+      }
+      
+      const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      
       content += `
-        <div class="bg-gray-50 p-3 rounded">
-          <span class="font-medium text-gray-700">${key}:</span>
-          <span class="text-gray-900 ml-2">${value}</span>
+        <div class="bg-gray-50 p-3 rounded border">
+          <span class="font-medium text-gray-700">${displayKey}:</span>
+          <div class="text-gray-900 mt-1 break-words">${displayValue}</div>
         </div>
       `;
     });
@@ -106,7 +148,8 @@ function formatResults(data) {
     return content;
   }
   
-  return `<pre class="bg-gray-100 p-4 rounded text-sm overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>`;
+  // Fallback for other data types
+  return `<pre class="bg-gray-100 p-4 rounded text-sm overflow-x-auto border">${JSON.stringify(data, null, 2)}</pre>`;
 }
 
 // API call wrapper
@@ -472,7 +515,11 @@ async function crawlWebsite() {
   
   try {
     const result = await apiCall('/seo/crawl', 'POST', { url, limit: parseInt(limit) });
-    showSuccess(resultsDiv, '网站爬取完成', result);
+    console.log('爬虫API返回结果:', result); // Debug log
+    
+    // 确保传递正确的消息和数据
+    const message = result.message || '网站爬取完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -492,7 +539,10 @@ async function analyzeSERP() {
   
   try {
     const result = await apiCall('/seo/serp', 'POST', { keyword, count: parseInt(count) });
-    showSuccess(resultsDiv, 'SERP分析完成', result);
+    console.log('SERP API返回结果:', result); // Debug log
+    
+    const message = result.message || 'SERP分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -511,7 +561,10 @@ async function analyzeSitemap() {
   
   try {
     const result = await apiCall('/seo/sitemap', 'POST', { url });
-    showSuccess(resultsDiv, 'Sitemap分析完成', result);
+    console.log('Sitemap API返回结果:', result); // Debug log
+    
+    const message = result.message || 'Sitemap分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -530,7 +583,10 @@ async function analyzeRobots() {
   
   try {
     const result = await apiCall('/seo/robots', 'POST', { url });
-    showSuccess(resultsDiv, 'Robots.txt分析完成', result);
+    console.log('Robots API返回结果:', result); // Debug log
+    
+    const message = result.message || 'Robots.txt分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -551,7 +607,10 @@ async function generateKeywords() {
   
   try {
     const result = await apiCall('/sem/keywords', 'POST', { seeds, modifiers });
-    showSuccess(resultsDiv, '关键词生成完成', result);
+    console.log('关键词API返回结果:', result); // Debug log
+    
+    const message = result.message || '关键词生成完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -576,7 +635,10 @@ async function createAds() {
       template, 
       max_length: parseInt(maxLength) 
     });
-    showSuccess(resultsDiv, '广告文案创建完成', result);
+    console.log('广告API返回结果:', result); // Debug log
+    
+    const message = result.message || '广告文案创建完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -602,7 +664,27 @@ async function analyzeWordFrequency() {
       min_length: parseInt(minLength),
       top_words: parseInt(topWords)
     });
-    showSuccess(resultsDiv, '词频分析完成', result);
+    console.log('词频API返回结果:', result); // Debug log
+    
+    // 词频分析返回的数据结构较复杂，需要特殊处理
+    const message = result.message || '词频分析完成';
+    if (result.data && result.data.words) {
+      // 创建展示统计信息和词频结果的格式
+      let displayData = result.data.words;
+      if (result.data.statistics) {
+        // 将统计信息添加到结果中
+        displayData = [{
+          '--- 文本统计 ---': '---',
+          '总词数': result.data.statistics.total_words,
+          '不同词数': result.data.statistics.unique_words,
+          '平均词长': result.data.statistics.avg_word_length,
+          '文本长度': result.data.statistics.text_length
+        }, ...result.data.words];
+      }
+      showSuccess(resultsDiv, message, displayData);
+    } else {
+      showSuccess(resultsDiv, message, result.data);
+    }
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -622,7 +704,10 @@ async function extractEntities() {
   
   try {
     const result = await apiCall('/text/extract', 'POST', { text, type: entityType });
-    showSuccess(resultsDiv, '实体提取完成', result);
+    console.log('实体提取API返回结果:', result); // Debug log
+    
+    const message = result.message || '实体提取完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -642,7 +727,10 @@ async function parseURLs() {
   
   try {
     const result = await apiCall('/url/parse', 'POST', { urls });
-    showSuccess(resultsDiv, 'URL解析完成', result);
+    console.log('URL解析API返回结果:', result); // Debug log
+    
+    const message = result.message || 'URL解析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -662,7 +750,10 @@ async function validateURLs() {
   
   try {
     const result = await apiCall('/url/validate', 'POST', { urls, type: validateType });
-    showSuccess(resultsDiv, 'URL验证完成', result);
+    console.log('URL验证API返回结果:', result); // Debug log
+    
+    const message = result.message || 'URL验证完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -865,7 +956,10 @@ async function analyzeSocialPosts() {
       posts, 
       analysis_type: analysisType 
     });
-    showSuccess(resultsDiv, '社交媒体分析完成', result);
+    console.log('社交媒体API返回结果:', result); // Debug log
+    
+    const message = result.message || '社交媒体分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -888,7 +982,10 @@ async function analyzeTrends() {
       hashtags, 
       time_period: timePeriod 
     });
-    showSuccess(resultsDiv, '趋势分析完成', result);
+    console.log('趋势分析API返回结果:', result); // Debug log
+    
+    const message = result.message || '趋势分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -912,7 +1009,10 @@ async function analyzeLogFile() {
       log_content: logContent, 
       analysis_type: analysisType 
     });
-    showSuccess(resultsDiv, '日志分析完成', result);
+    console.log('日志分析API返回结果:', result); // Debug log
+    
+    const message = result.message || '日志分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }
@@ -942,7 +1042,10 @@ async function analyzeCompetitors() {
       competitor_domains: competitorDomains,
       analysis_type: analysisType 
     });
-    showSuccess(resultsDiv, '竞品分析完成', result);
+    console.log('竞品分析API返回结果:', result); // Debug log
+    
+    const message = result.message || '竞品分析完成';
+    showSuccess(resultsDiv, message, result.data);
   } catch (error) {
     showError(resultsDiv, error.message);
   }

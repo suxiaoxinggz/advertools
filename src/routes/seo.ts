@@ -18,7 +18,11 @@ import {
   fetchWithTimeout 
 } from '../utils/helpers';
 
-const seo = new Hono();
+type Bindings = {
+  API_KEYS: KVNamespace;
+}
+
+const seo = new Hono<{ Bindings: Bindings }>();
 
 // Website Crawler
 seo.post('/crawl', async (c) => {
@@ -109,9 +113,9 @@ seo.post('/serp', async (c) => {
     
     // Try to use real Google Search API first
     try {
-      const { getApiKey } = await import('./api-config');
-      const apiKey = getApiKey('google_search_api_key');
-      const cx = getApiKey('google_search_cx');
+      const { getApiKeyForRoute } = await import('./api-config');
+      const apiKey = await getApiKeyForRoute(c.env, 'google_search_api_key');
+      const cx = await getApiKeyForRoute(c.env, 'google_search_cx');
       
       if (apiKey && cx) {
         const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(keyword)}&num=${Math.min(count, 10)}`;

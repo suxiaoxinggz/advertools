@@ -313,7 +313,7 @@ function generateHTMLReport(title: string, sections: any[]): string {
                 <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
             </thead>
             <tbody>
-                ${section.data.map(row => 
+                ${section.data.map((row: any) => 
                   `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`
                 ).join('')}
             </tbody>
@@ -360,7 +360,7 @@ function generateMarkdownReport(title: string, sections: any[]): string {
       markdown += `| ${headers.join(' | ')} |\n`;
       markdown += `| ${headers.map(() => '---').join(' | ')} |\n`;
       
-      section.data.forEach(row => {
+      section.data.forEach((row: any) => {
         markdown += `| ${headers.map(h => row[h] || '').join(' | ')} |\n`;
       });
       

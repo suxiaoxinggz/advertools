@@ -2,14 +2,54 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '../types/api';
 
-const apiConfig = new Hono();
+type Bindings = {
+  API_KEYS: KVNamespace;
+}
 
-// In-memory storage for API keys (resets on service restart)
-// Note: In Cloudflare Workers environment, file system access is not available
-const apiKeys: Record<string, string> = {};
+const apiConfig = new Hono<{ Bindings: Bindings }>();
+
+// Helper function to get all API keys from KV storage
+async function getAllApiKeys(env: { API_KEYS: KVNamespace }): Promise<Record<string, string>> {
+  const keys = [
+    'google_search_api_key',
+    'google_search_cx', 
+    'twitter_bearer_token',
+    'youtube_api_key',
+    'knowledge_graph_api_key'
+  ];
+  
+  const apiKeys: Record<string, string> = {};
+  
+  for (const key of keys) {
+    const value = await env.API_KEYS.get(key);
+    if (value) {
+      apiKeys[key] = value;
+    }
+  }
+  
+  return apiKeys;
+}
+
+// Helper function to set API key in KV storage
+async function setApiKey(env: { API_KEYS: KVNamespace }, key: string, value: string): Promise<void> {
+  await env.API_KEYS.put(key, value);
+}
+
+// Helper function to delete API key from KV storage
+async function deleteApiKey(env: { API_KEYS: KVNamespace }, key: string): Promise<void> {
+  await env.API_KEYS.delete(key);
+}
+
+// Helper function to get single API key from KV storage
+async function getApiKey(env: { API_KEYS: KVNamespace }, key: string): Promise<string | null> {
+  return await env.API_KEYS.get(key);
+}
 
 // Get API configuration status
 apiConfig.get('/status', async (c) => {
+  const { env } = c;
+  const apiKeys = await getAllApiKeys(env);
+  
   const status = {
     google_search: !!apiKeys.google_search_api_key,
     google_search_cx: !!apiKeys.google_search_cx,
@@ -32,6 +72,7 @@ apiConfig.get('/status', async (c) => {
 // Set API keys
 apiConfig.post('/keys', async (c) => {
   try {
+    const { env } = c;
     const body = await c.req.json<{
       google_search_api_key?: string;
       google_search_cx?: string;
@@ -42,18 +83,22 @@ apiConfig.post('/keys', async (c) => {
     
     let updated = 0;
     
-    Object.entries(body).forEach(([key, value]) => {
+    // Save each API key to KV storage
+    for (const [key, value] of Object.entries(body)) {
       if (value && value.trim()) {
-        apiKeys[key] = value.trim();
+        await setApiKey(env, key, value.trim());
         updated++;
       }
-    });
+    }
+    
+    // Get all current API keys for response
+    const currentApiKeys = await getAllApiKeys(env);
     
     return c.json<ApiResponse>({
       success: true,
       data: {
         updated_keys: updated,
-        configured_apis: Object.keys(apiKeys)
+        configured_apis: Object.keys(currentApiKeys)
       },
       message: `成功更新 ${updated} 个API密钥`
     });
@@ -68,10 +113,14 @@ apiConfig.post('/keys', async (c) => {
 
 // Remove API keys
 apiConfig.delete('/keys/:api', async (c) => {
+  const { env } = c;
   const api = c.req.param('api');
   
-  if (apiKeys[api]) {
-    delete apiKeys[api];
+  // Check if API key exists
+  const existingKey = await getApiKey(env, api);
+  
+  if (existingKey) {
+    await deleteApiKey(env, api);
     return c.json<ApiResponse>({
       success: true,
       message: `已删除 ${api} 的API密钥`
@@ -86,9 +135,12 @@ apiConfig.delete('/keys/:api', async (c) => {
 
 // Test API connection
 apiConfig.post('/test/:api', async (c) => {
+  const { env } = c;
   const api = c.req.param('api');
   
   try {
+    const apiKeys = await getAllApiKeys(env);
+    
     switch (api) {
       case 'google_search':
         if (!apiKeys.google_search_api_key || !apiKeys.google_search_cx) {
@@ -170,9 +222,9 @@ apiConfig.post('/test/:api', async (c) => {
   }
 });
 
-// Get API key for internal use (should be protected in production)
-export function getApiKey(keyName: string): string | undefined {
-  return apiKeys[keyName];
+// Get API key for internal use by other route modules
+export async function getApiKeyForRoute(env: { API_KEYS: KVNamespace }, keyName: string): Promise<string | null> {
+  return await env.API_KEYS.get(keyName);
 }
 
 export { apiConfig };

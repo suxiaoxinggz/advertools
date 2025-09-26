@@ -15,7 +15,7 @@ export function parseUrl(url: string) {
     const parsed = new URL(url);
     const queryParams: Record<string, string> = {};
     
-    parsed.searchParams.forEach((value, key) => {
+    parsed.searchParams.forEach((value: string, key: string) => {
       queryParams[key] = value;
     });
     
@@ -174,8 +174,8 @@ export function extractBasicSeoData(html: string, url: string) {
   
   return {
     url,
-    title: titleMatch ? titleMatch[1].trim() : null,
-    meta_description: metaDescMatch ? metaDescMatch[1].trim() : null,
+    title: titleMatch ? titleMatch[1].trim() : undefined,
+    meta_description: metaDescMatch ? metaDescMatch[1].trim() : undefined,
     h1: h1Matches.map(h => h.replace(/<[^>]+>/g, '').trim()),
     h2: h2Matches.map(h => h.replace(/<[^>]+>/g, '').trim()),
     h3: h3Matches.map(h => h.replace(/<[^>]+>/g, '').trim()),

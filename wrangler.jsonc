@@ -1,20 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "webapp",
+  "name": "advertools-webapp",
   "compatibility_date": "2025-09-25",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "API_KEYS",
+      "id": "6196b84d7ee146249fd8c0621139f2ee",
+      "preview_id": "a251195a55354294968aff697f290d80"
+    }
   ]
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
   // "r2_buckets": [
   //   {
   //     "binding": "MY_BUCKET",
