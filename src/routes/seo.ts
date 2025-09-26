@@ -137,9 +137,9 @@ seo.post('/serp', async (c) => {
             message: `成功获取"${keyword}"的前${results.length}个搜索结果 (Google API)`
           });
         }
+      } catch (error) {
+        console.log('Google API failed, falling back to mock data:', error);
       }
-    } catch (error) {
-      console.log('Google API failed, falling back to mock data:', error);
     }
     
     // Fallback to mock data if API is not configured or fails
