@@ -111,14 +111,12 @@ seo.post('/serp', async (c) => {
       }, 400);
     }
     
-    // Try to use real Google Search API first
-    try {
-      const { getApiKeyForRoute } = await import('./api-config');
-      const apiKey = await getApiKeyForRoute(c.env, 'google_search_api_key');
-      const cx = await getApiKeyForRoute(c.env, 'google_search_cx');
-      
-      if (apiKey && cx) {
-        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(keyword)}&num=${Math.min(count, 10)}`;
+    // 尝试使用真实API（如果前端提供了密钥）
+    const requestData = typeof c.req.json === 'function' ? await c.req.json().catch(() => ({})) : {};
+    
+    if (requestData.google_search_api_key && requestData.google_search_cx) {
+      try {
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${requestData.google_search_api_key}&cx=${requestData.google_search_cx}&q=${encodeURIComponent(keyword)}&num=${Math.min(count, 10)}`;
         
         const response = await fetch(searchUrl);
         

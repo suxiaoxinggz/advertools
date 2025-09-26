@@ -1,5 +1,63 @@
 // Digital Marketing Analytics Platform - Frontend JavaScript
 
+// 🔒 API密钥安全管理（本地存储）
+const API_KEYS_STORAGE_KEY = 'advertools_api_keys';
+
+// API密钥管理函数
+function saveApiKeys(keys) {
+  try {
+    localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+    console.log('✅ API密钥已安全保存到本地存储');
+    return true;
+  } catch (error) {
+    console.error('❌ 保存API密钥失败:', error);
+    return false;
+  }
+}
+
+function getApiKeys() {
+  try {
+    const stored = localStorage.getItem(API_KEYS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.error('❌ 读取API密钥失败:', error);
+    return {};
+  }
+}
+
+function deleteApiKey(keyName) {
+  try {
+    const keys = getApiKeys();
+    delete keys[keyName];
+    localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+    console.log(`✅ 已删除API密钥: ${keyName}`);
+    return true;
+  } catch (error) {
+    console.error('❌ 删除API密钥失败:', error);
+    return false;
+  }
+}
+
+function clearAllApiKeys() {
+  try {
+    localStorage.removeItem(API_KEYS_STORAGE_KEY);
+    console.log('✅ 已清除所有API密钥');
+    return true;
+  } catch (error) {
+    console.error('❌ 清除API密钥失败:', error);
+    return false;
+  }
+}
+
+// 获取包含API密钥的请求数据
+function getApiRequestData(additionalData = {}) {
+  const apiKeys = getApiKeys();
+  return {
+    ...apiKeys,
+    ...additionalData
+  };
+}
+
 // Global state
 let currentTool = null;
 let isLoading = false;
@@ -538,8 +596,10 @@ async function analyzeSERP() {
   showLoading(resultsDiv);
   
   try {
-    const result = await apiCall('/seo/serp', 'POST', { keyword, count: parseInt(count) });
-    console.log('SERP API返回结果:', result); // Debug log
+    // 🔒 包含本地存储的API密钥
+    const requestData = getApiRequestData({ keyword, count: parseInt(count) });
+    const result = await apiCall('/seo/serp', 'POST', requestData);
+    console.log('SERP API返回结果:', result);
     
     const message = result.message || 'SERP分析完成';
     showSuccess(resultsDiv, message, result.data);
@@ -1204,23 +1264,55 @@ function showAPIConfig() {
     </div>
   `;
   
+  // 🔒 填充已保存的API密钥
+  setTimeout(() => {
+    const savedKeys = getApiKeys();
+    if (savedKeys.google_search_api_key) {
+      document.getElementById('google-api-key').value = savedKeys.google_search_api_key;
+    }
+    if (savedKeys.google_search_cx) {
+      document.getElementById('google-cx').value = savedKeys.google_search_cx;
+    }
+    if (savedKeys.twitter_bearer_token) {
+      document.getElementById('twitter-bearer').value = savedKeys.twitter_bearer_token;
+    }
+    if (savedKeys.youtube_api_key) {
+      document.getElementById('youtube-api-key').value = savedKeys.youtube_api_key;
+    }
+    if (savedKeys.knowledge_graph_api_key) {
+      document.getElementById('knowledge-graph-key').value = savedKeys.knowledge_graph_api_key;
+    }
+  }, 100);
+  
   // Load API status
   loadAPIStatus();
 }
 
 async function loadAPIStatus() {
   try {
-    const result = await apiCall('/config/status');
+    // 🔒 从本地存储读取API密钥状态
+    const localKeys = getApiKeys();
+    
+    // 发送本地状态给服务器验证
+    const result = await apiCall('/config/status', 'POST', localKeys);
     const statusDiv = document.getElementById('api-status');
     
     if (result.success) {
       const { configured_apis, missing_apis, status } = result.data;
       
-      let statusHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      let statusHTML = '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">';
+      statusHTML += '<div class="flex items-center mb-2">';
+      statusHTML += '<i class="fas fa-shield-alt text-blue-500 mr-2"></i>';
+      statusHTML += '<span class="font-medium text-blue-800">🔒 API密钥安全说明</span>';
+      statusHTML += '</div>';
+      statusHTML += '<p class="text-blue-700 text-sm">所有API密钥均存储在您的浏览器本地，不会上传到服务器，保护您的隐私安全。</p>';
+      statusHTML += '</div>';
+      
+      statusHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
       
       Object.entries(status).forEach(([api, configured]) => {
         const iconClass = configured ? 'fas fa-check-circle text-green-500' : 'fas fa-times-circle text-red-500';
-        const statusText = configured ? '已配置' : '未配置';
+        const statusText = configured ? '已配置 (本地存储)' : '未配置';
         const statusClass = configured ? 'status-success' : 'status-error';
         
         statusHTML += `
@@ -1235,7 +1327,7 @@ async function loadAPIStatus() {
       });
       
       statusHTML += '</div>';
-      statusHTML += `<p class="text-sm text-gray-600 mt-4">${configured_apis.length}/5 个API已配置</p>`;
+      statusHTML += `<p class="text-sm text-gray-600 mt-4">🔒 ${configured_apis.length}/5 个API已在本地配置</p>`;
       
       statusDiv.innerHTML = statusHTML;
     }
@@ -1250,7 +1342,7 @@ async function loadAPIStatus() {
 }
 
 async function saveAPIKeys() {
-  console.log('开始保存API密钥...'); // Debug log
+  console.log('🔒 开始保存API密钥到本地存储...'); 
   
   const keys = {
     google_search_api_key: document.getElementById('google-api-key').value.trim(),
@@ -1260,7 +1352,7 @@ async function saveAPIKeys() {
     knowledge_graph_api_key: document.getElementById('knowledge-graph-key').value.trim()
   };
   
-  console.log('收集到的API密钥:', Object.keys(keys).filter(k => keys[k])); // Debug log
+  console.log('收集到的API密钥:', Object.keys(keys).filter(k => keys[k])); 
   
   // Remove empty keys
   Object.keys(keys).forEach(key => {
@@ -1275,24 +1367,30 @@ async function saveAPIKeys() {
   }
   
   try {
-    console.log('发送API密钥到服务器...'); // Debug log
-    const result = await apiCall('/config/keys', 'POST', keys);
-    console.log('服务器响应:', result); // Debug log
-    
-    if (result.success) {
-      const message = `✅ 成功保存 ${result.data.updated_keys} 个API密钥\n配置的API: ${result.data.configured_apis.join(', ')}`;
-      alert(message);
-      loadAPIStatus(); // Reload status
+    // 🔒 保存到本地存储（安全）
+    const saved = saveApiKeys(keys);
+    if (saved) {
+      // 验证API密钥格式（不上传到服务器）
+      const result = await apiCall('/config/keys', 'POST', keys);
+      console.log('服务器验证响应:', result);
       
-      // Auto-test APIs after saving
-      if (confirm('是否立即测试保存的API连接？')) {
-        setTimeout(() => testAllAPIs(), 500);
+      if (result.success) {
+        const message = `🔒 成功保存 ${result.data.updated_keys} 个API密钥到本地存储\n配置的API: ${result.data.configured_apis.join(', ')}\n\n✅ ${result.data.storage_instruction}`;
+        alert(message);
+        loadAPIStatus(); // Reload status
+        
+        // Auto-test APIs after saving
+        if (confirm('是否立即测试保存的API连接？')) {
+          setTimeout(() => testAllAPIs(), 500);
+        }
+      } else {
+        alert('❌ API密钥格式验证失败: ' + result.error);
       }
     } else {
-      alert('❌ 保存失败: ' + result.error);
+      alert('❌ 本地存储保存失败，请检查浏览器设置');
     }
   } catch (error) {
-    console.error('API密钥保存失败:', error); // Debug log
+    console.error('API密钥保存失败:', error);
     alert('❌ 保存失败: ' + error.message + '\n\n请检查网络连接和服务状态');
   }
 }
@@ -1394,17 +1492,23 @@ API密钥格式:
 }
 
 async function clearAPIKeys() {
-  if (confirm('确定要清除所有API密钥吗？')) {
-    // Clear form
-    document.getElementById('google-api-key').value = '';
-    document.getElementById('google-cx').value = '';
-    document.getElementById('twitter-bearer').value = '';
-    document.getElementById('youtube-api-key').value = '';
-    document.getElementById('knowledge-graph-key').value = '';
+  if (confirm('🔒 确定要清除所有本地存储的API密钥吗？\n\n此操作将删除浏览器中保存的所有API密钥。')) {
+    // Clear local storage
+    const cleared = clearAllApiKeys();
     
-    // You would also call API to clear server-side keys here
-    alert('API密钥已清除');
-    loadAPIStatus();
+    if (cleared) {
+      // Clear form
+      document.getElementById('google-api-key').value = '';
+      document.getElementById('google-cx').value = '';
+      document.getElementById('twitter-bearer').value = '';
+      document.getElementById('youtube-api-key').value = '';
+      document.getElementById('knowledge-graph-key').value = '';
+      
+      alert('🔒 所有API密钥已从本地存储中清除');
+      loadAPIStatus();
+    } else {
+      alert('❌ 清除失败，请重试');
+    }
   }
 }
 

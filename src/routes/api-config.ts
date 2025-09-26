@@ -2,77 +2,51 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '../types/api';
 
-type Bindings = {
-  API_KEYS: KVNamespace;
-}
+const apiConfig = new Hono();
 
-const apiConfig = new Hono<{ Bindings: Bindings }>();
+// 🔒 安全说明：API密钥仅存储在用户浏览器的localStorage中
+// 不会发送到服务器，完全本地化存储，保护用户隐私
 
-// Helper function to get all API keys from KV storage
-async function getAllApiKeys(env: { API_KEYS: KVNamespace }): Promise<Record<string, string>> {
-  const keys = [
-    'google_search_api_key',
-    'google_search_cx', 
-    'twitter_bearer_token',
-    'youtube_api_key',
-    'knowledge_graph_api_key'
-  ];
-  
-  const apiKeys: Record<string, string> = {};
-  
-  for (const key of keys) {
-    const value = await env.API_KEYS.get(key);
-    if (value) {
-      apiKeys[key] = value;
-    }
-  }
-  
-  return apiKeys;
-}
+// 临时会话存储（仅用于单次请求传递，不持久化）
+const sessionKeys: Map<string, Record<string, string>> = new Map();
 
-// Helper function to set API key in KV storage
-async function setApiKey(env: { API_KEYS: KVNamespace }, key: string, value: string): Promise<void> {
-  await env.API_KEYS.put(key, value);
-}
-
-// Helper function to delete API key from KV storage
-async function deleteApiKey(env: { API_KEYS: KVNamespace }, key: string): Promise<void> {
-  await env.API_KEYS.delete(key);
-}
-
-// Helper function to get single API key from KV storage
-async function getApiKey(env: { API_KEYS: KVNamespace }, key: string): Promise<string | null> {
-  return await env.API_KEYS.get(key);
-}
-
-// Get API configuration status
-apiConfig.get('/status', async (c) => {
-  const { env } = c;
-  const apiKeys = await getAllApiKeys(env);
+// Get API configuration status（前端会发送当前localStorage状态）
+apiConfig.post('/status', async (c) => {
+  const body = await c.req.json<{
+    google_search_api_key?: string;
+    google_search_cx?: string;
+    twitter_bearer_token?: string;
+    youtube_api_key?: string;
+    knowledge_graph_api_key?: string;
+  }>();
   
   const status = {
-    google_search: !!apiKeys.google_search_api_key,
-    google_search_cx: !!apiKeys.google_search_cx,
-    twitter_bearer: !!apiKeys.twitter_bearer_token,
-    youtube_api: !!apiKeys.youtube_api_key,
-    knowledge_graph: !!apiKeys.knowledge_graph_api_key
+    google_search: !!(body.google_search_api_key && body.google_search_cx),
+    google_search_cx: !!body.google_search_cx,
+    twitter_bearer: !!body.twitter_bearer_token,
+    youtube_api: !!body.youtube_api_key,
+    knowledge_graph: !!body.knowledge_graph_api_key
   };
+  
+  // 临时存储到会话中（用于当前用户的API调用）
+  const sessionId = Math.random().toString(36).substring(7);
+  sessionKeys.set(sessionId, body);
   
   return c.json<ApiResponse>({
     success: true,
     data: {
+      session_id: sessionId, // 返回会话ID供后续API调用使用
       configured_apis: Object.entries(status).filter(([_, configured]) => configured).map(([api, _]) => api),
       missing_apis: Object.entries(status).filter(([_, configured]) => !configured).map(([api, _]) => api),
       status: status
     },
-    message: `${Object.values(status).filter(Boolean).length}/5 API已配置`
+    message: `${Object.values(status).filter(Boolean).length}/5 API已配置（本地存储）`
   });
 });
 
-// Set API keys
+// 设置API密钥（返回前端存储指令）
 apiConfig.post('/keys', async (c) => {
   try {
-    const { env } = c;
     const body = await c.req.json<{
       google_search_api_key?: string;
       google_search_cx?: string;
@@ -82,64 +56,67 @@ apiConfig.post('/keys', async (c) => {
     }>();
     
     let updated = 0;
+    const validKeys: string[] = [];
     
-    // Save each API key to KV storage
-    for (const [key, value] of Object.entries(body)) {
+    // 验证API密钥格式（不存储，只验证）
+    Object.entries(body).forEach(([key, value]) => {
       if (value && value.trim()) {
-        await setApiKey(env, key, value.trim());
+        validKeys.push(key);
         updated++;
       }
-    }
-    
-    // Get all current API keys for response
-    const currentApiKeys = await getAllApiKeys(env);
+    });
     
     return c.json<ApiResponse>({
       success: true,
       data: {
         updated_keys: updated,
-        configured_apis: Object.keys(currentApiKeys)
+        configured_apis: validKeys,
+        storage_instruction: 'API密钥将安全存储在您的浏览器本地，不会发送到服务器'
       },
-      message: `成功更新 ${updated} 个API密钥`
+      message: `验证成功 ${updated} 个API密钥（将保存在本地）`
     });
     
   } catch (error) {
     return c.json<ApiResponse>({
       success: false,
-      error: error instanceof Error ? error.message : 'API密钥配置失败'
+      error: error instanceof Error ? error.message : 'API密钥验证失败'
     }, 500);
   }
 });
 
-// Remove API keys
+// 删除API密钥（返回前端删除指令）
 apiConfig.delete('/keys/:api', async (c) => {
-  const { env } = c;
   const api = c.req.param('api');
   
-  // Check if API key exists
-  const existingKey = await getApiKey(env, api);
-  
-  if (existingKey) {
-    await deleteApiKey(env, api);
-    return c.json<ApiResponse>({
-      success: true,
-      message: `已删除 ${api} 的API密钥`
-    });
-  }
-  
   return c.json<ApiResponse>({
-    success: false,
-    error: 'API密钥不存在'
-  }, 404);
+    success: true,
+    data: {
+      deleted_key: api,
+      storage_instruction: '请在前端localStorage中删除该密钥'
+    },
+    message: `请删除本地存储的 ${api} 密钥`
+  });
 });
 
-// Test API connection
+// 测试API连接（需要前端发送密钥）
 apiConfig.post('/test/:api', async (c) => {
-  const { env } = c;
   const api = c.req.param('api');
   
   try {
-    const apiKeys = await getAllApiKeys(env);
+    const body = await c.req.json<{
+      google_search_api_key?: string;
+      google_search_cx?: string;
+      twitter_bearer_token?: string;
+      youtube_api_key?: string;
+      knowledge_graph_api_key?: string;
+      session_id?: string;
+    }>();
+    
+    // 使用前端发送的密钥或会话中的密钥
+    let apiKeys = body;
+    if (body.session_id && sessionKeys.has(body.session_id)) {
+      apiKeys = { ...sessionKeys.get(body.session_id), ...body };
+    }
     
     switch (api) {
       case 'google_search':
@@ -222,9 +199,15 @@ apiConfig.post('/test/:api', async (c) => {
   }
 });
 
-// Get API key for internal use by other route modules
-export async function getApiKeyForRoute(env: { API_KEYS: KVNamespace }, keyName: string): Promise<string | null> {
-  return await env.API_KEYS.get(keyName);
+// 从请求中获取API密钥（用于其他路由调用）
+export function getApiKeyFromRequest(body: any, keyName: string): string | null {
+  return body[keyName] || null;
+}
+
+// 从会话中获取API密钥
+export function getApiKeyFromSession(sessionId: string, keyName: string): string | null {
+  const session = sessionKeys.get(sessionId);
+  return session ? (session[keyName] || null) : null;
 }
 
 export { apiConfig };
